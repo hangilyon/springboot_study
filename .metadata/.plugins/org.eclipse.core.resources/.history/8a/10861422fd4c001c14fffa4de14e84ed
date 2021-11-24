@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<link rel="stylesheet" type="text/css" href="/style.css">
+</head>
+<body>
+	<div class="wrap">
+		<h1 class="title">CARE LAB</h1>
+		<hr>
+		<nav class="nav">
+			<!-- nav -->
+			<ul id="nav_url">
+				<li><a href="">test1</a></li>
+				<li><a href="">test2</a></li>
+			</ul>
+		</nav>
+		<hr>
+	</div>
+</body>
+</html>

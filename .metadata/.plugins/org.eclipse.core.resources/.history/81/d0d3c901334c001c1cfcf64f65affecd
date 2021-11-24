@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+	<span th:test="${session.user}"></span>${session.user}<br>
+	${user}<br>
+	
+</body>
+</html>

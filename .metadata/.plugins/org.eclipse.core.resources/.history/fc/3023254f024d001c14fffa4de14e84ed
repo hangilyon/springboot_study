@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<script type="text/javascript">
+	function getMovies(links) {
+		let frontNum = links.indexOf("<") + 1
+		let rearNum = links.indexOf(">")
+		console.log(links.substring(frontNum, rearNum))
+	}
+</script>
+</head>
+<body>
+	<header th:include="default/header"></header>
+	<div class="search" id="search">
+		<h3>상영중인 영화</h3>
+		<table border="1">
+			<tr>
+				<th>번호</th>
+				<th>영화 제목</th>
+				<th>상영 날짜</th>
+			</tr>
+			<tr th:each="movie : ${movie}" th:object="${movie}">
+				<td><label th:text="*{movieId}"></label></td>
+				<td><a style="cursor: pointer" th:text="*{movieTitle}"
+					th:attr="onclick=|getMovies('*{links}')|"></a></td>
+				<td><label th:text="*{movieDate}"></label></td>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+	<h3>session</h3>
+	<div th:text="${session.user.name}"></div>
+	<div th:text="${session.user.addr}"></div>
+	<div th:object="${session.user}">
+		<div th:text="*{name}"></div>
+		<div th:text="*{addr}"></div>
+	</div>
+	<h3>model</h3>
+	<div th:text="${user.name}"></div>
+	<div th:text="${user.addr}"></div>
+	<div th:object="${user}">
+		<div th:text="*{name}"></div>
+		<div th:text="*{addr}"></div>
+	</div>
+	<hr>
+	<p th:text="#{url.naver}"></p>
+	<hr>
+	<a th:href="#{url.naver}" th:text="#{url.naver}"></a>
+	<br>
+	<a th:href="@{home}" th:text="home"></a>
+	<a href="home" >home</a>
+	<br>
+	<a th:href="@{'/home/' + #{url.naver} }">url.naver</a>
+	<br>
+	<a th:href="@{'/home/' + ${user.name}}">user.name</a>
+	<a th:href="@{'/home/' + ${user.name}+'/'+${user.addr}}">user.name</a>
+	<br>
+	<a th:href="@{home(name=${user.name}) }">name=user.name</a>
+	<br>
+	<a th:href="@{home(name=${user.name},addr=${user.addr})}">
+		name=user.name, addr=user.addr </a>
+	<br>
+
+	<a href="getuser?id=${user.name}">사용자 보기</a>
+	<hr>
+	[[${msg}]]
+</body>
+</html>

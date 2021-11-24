@@ -1,0 +1,26 @@
+package com.care.root.controller;
+
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+
+@Controller
+public class CommonController {
+	@Autowired HttpSession session;
+	
+	@GetMapping("/")
+	public String index(Model model) {
+		session.setAttribute("user", "session value");
+		model.addAttribute("user","model value");
+		return "index";
+	}
+	@GetMapping("test")
+	public String test() {
+		return "test";
+	}
+
+
+}

@@ -1,0 +1,5 @@
+server.port = 8888
+#server.servlet.jsp.init-parameters.development = true
+spring.mvc.view.prefix = /WEB-INF/jsp/
+spring.mvc.view.suffix = .jsp
+

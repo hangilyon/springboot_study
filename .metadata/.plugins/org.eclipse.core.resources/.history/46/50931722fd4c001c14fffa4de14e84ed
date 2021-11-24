@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<link rel="stylesheet" type="text/css" href="/style.css">
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script type="text/javascript">
+	function getUrl(){
+		$.ajax({
+			url : "/geturl",
+			type : "get",
+			dataType : "json",
+			success : function(urlList){
+				console.log(urlList)
+			}, error : function(){alert('문제발생')}
+		})
+	}
+</script>
+</head>
+<body onload="getUrl()">
+	<header th:include="default/header"></header>
+	<div class="wrap">
+		기본 페이지
+	</div>
+</body>
+</html>

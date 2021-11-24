@@ -1,0 +1,6 @@
+package com.care.root.controller;
+
+public class TestDTO {
+	private String name;
+	priavate String addr;
+}

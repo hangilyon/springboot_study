@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<link rel="stylesheet" type="text/css" href="/style.css">
+<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+<script type="text/javascript">
+	function getUrl(){
+		$.ajax({
+			url : "/geturl",
+			type : "get",
+			dataType : "json",
+			success : function(urlList){
+				console.log(urlList);
+				showUrl(urlList);
+			}, error : function(){alert('문제발생')}
+		})
+	}
+	function showUrl(urlList){
+		// item 이 urlList에 들어오는 큰 덩어리 한개씩
+		// index는 array 안에 있는 번호(0,1)
+		$.each(urlList, function(index, item){
+			$("#nav_url").append("<li id="+ index +"></li>")
+			
+			a = document.createElement("a");
+			a.href = item.links[0].href;
+			a.innerHTML = item.title;
+			
+			$("#"+index).append(a);
+		})
+	}
+</script>
+</head>
+<body onload="getUrl()">
+	<div class="wrap">
+		<h1 class="title">CARE LAB</h1>
+		<hr>
+		<nav class="nav">
+			<!-- nav -->
+			<ul id="nav_url">
+			</ul>
+		</nav>
+		<hr>
+	</div>
+</body>
+</html>
