@@ -4,12 +4,52 @@
 <meta charset="UTF-8">
 <title>Insert title here</title>
 <script type="text/javascript">
+	/*
+	 function getMovies(links) {
+	 // < > 사이에 있는 문자열을 꺼내쓰는 code
+	 let frontNum = links.indexOf("<") + 1
+	 let rearNum = links.indexOf(">")
+	 console.log(links.substring(frontNum, rearNum))
+	 console.log(links);
+	
+	 let movieInfoURL = links.substring(frontNum, rearNum)
+	 $.ajax({
+	 url : movieInfoURL,
+	 type : "GET",
+	 dataType : "json",
+	 success : function(info) {
+	 let html = info.result
+	 $("#search").html(html)
+	 },
+	 error : function() {
+	 alert('문제 발생')
+	 }
+	 });
+	 }
+	 */
 	function getMovies(links) {
-		// < > 사이에 있는 문자열을 꺼내쓰는 code
 		let frontNum = links.indexOf("<") + 1
 		let rearNum = links.indexOf(">")
 		console.log(links.substring(frontNum, rearNum))
-		console.log(links);
+		let movieInfoURL = links.substring(frontNum, rearNum)
+		$.ajax({
+			url : movieInfoURL,
+			type : "GET",
+			dataType : "json",
+			success : function(info) {
+				let html = "<h2>영화 정보</h2>"
+				html += "<b>영화 제목 : </b>" + info.movieTitle + "<br>"
+				html += "<b>상영 날짜 : </b>" + info.movieDate + "<br>"
+				html += "<b>잔여 티켓 : </b>" + info.count + "<hr>"
+				html += "<a href='/bookview/"+info.movieId+
+      "/"+info.movieTitle+"/"+info.movieDate+"'>예매하러가기</a>"
+				//let html =info.result
+				$("#search").html(html)
+			},
+			error : function() {
+				alert('문제 발생')
+			}
+		});
 	}
 </script>
 </head>

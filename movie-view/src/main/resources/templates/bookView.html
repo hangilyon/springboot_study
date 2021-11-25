@@ -1,10 +1,37 @@
 <!DOCTYPE html>
-<html>
+<html xmlns:th="http://www.thymeleaf.org">
 <head>
 <meta charset="UTF-8">
 <title>Insert title here</title>
 </head>
 <body>
-
+	<header th:include="default/header"></header>
+	<div class="wrap" align="center">
+		<h3>[[${movieId}]] : [[${movieTitle}]] / [[${movieDate}]]</h3>
+		<hr width="300px">
+		<form th:action="@{/booking}" method="post">
+			<input type="hidden" th:value="${movieId}" th:name="movieId">
+			<input type="hidden" th:value="${movieTitle}" th:name="movieTitle">
+			<input type="hidden" th:value="${movieDate}" th:name="movieDate">
+			<table border="1">
+				<tr>
+					<th>이 름</th>
+					<td><input type="text" name="bookName"></td>
+				</tr>
+				<tr>
+					<th>전화번호</th>
+					<td><input type="text" name="bookPhone"></td>
+				</tr>
+				<tr>
+					<th>예매 수</th>
+					<td><input type="text" name="bookCount"></td>
+				</tr>
+				<tr>
+					<td colspan="2" align="right"><input type="submit"
+						value="예매확정"></td>
+				</tr>
+			</table>
+		</form>
+	</div>
 </body>
 </html>

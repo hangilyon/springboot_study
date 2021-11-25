@@ -1,0 +1,403 @@
+검색, 목록을 불러오는 기능
+데이터베이스 설정
+
+	// MyBatisConfig.java
+		// xml에다가 설정한 것과 같은 내용
+		spring 에서도 사용 가능
+		쿼리문은 MapperScan 에다가 작성
+		
+		import javax.sql.DataSource;
+		import org.apache.ibatis.session.SqlSessionFactory;
+		import org.mybatis.spring.SqlSessionFactoryBean;
+		import org.mybatis.spring.SqlSessionTemplate;
+		import org.mybatis.spring.annotation.MapperScan;
+		import org.springframework.context.annotation.Bean;
+		import org.springframework.context.annotation.Configuration;
+
+		@Configuration
+		@MapperScan(basePackages = {"com.care.root.dao"})
+		public class MyBatisConfig {
+			@Bean
+			public SqlSessionFactory seqSessionFactory(DataSource ds) 
+					throws Exception {
+				SqlSessionFactoryBean sf = new SqlSessionFactoryBean();
+				sf.setDataSource(ds);
+				return sf.getObject();
+			}
+			@Bean
+			public SqlSessionTemplate sqlSessionTemplate(SqlSessionFactory sf) 
+			{
+				return new SqlSessionTemplate(sf);
+			}
+		}
+
+	// MovieSearchDao.java
+		import java.util.List;
+		import org.apache.ibatis.annotations.Result;
+		import org.apache.ibatis.annotations.Results;
+		import org.apache.ibatis.annotations.Select;
+		import com.care.root.dto.SearchMovieDto;
+
+		public interface MovieSearchDao {
+			@Results({
+				@Result(property = "movieId", column="movie_id"),
+				@Result(property = "movieTitle", column="movie_title"),
+				@Result(property = "movieDate", column="movie_date"),
+				@Result(property = "count", column="count")
+			})
+			@Select("select * from movie_playing")
+			public List<SearchMovieDto> getMovies();
+		}
+// JUnit5 으로 db와의 Conn test 
+	// project 우클릭 -> BuildPath -> JUnit 5 lib 
+	// MovieSearchApplicationTests
+		import java.util.List;
+		import org.junit.Assert;
+		import org.junit.jupiter.api.Test;
+		import org.springframework.beans.factory.annotation.Autowired;
+		import org.springframework.boot.test.context.SpringBootTest;
+		import com.care.root.dao.MovieSearchDao;
+		import com.care.root.dto.SearchMovieDto;
+
+		@SpringBootTest
+		class MovieSearchApplicationTests {
+			@Autowired MovieSearchDao dao;
+			@Test void contextLoads() {
+				Assert.assertNotNull(dao);
+				List<SearchMovieDto> list =  dao.getMovies();
+				Assert.assertNotSame(list.size(), 0); 
+			}
+		}
+	// SearchMovieDto
+		import org.springframework.hateoas.RepresentationModel;
+		import lombok.Getter;
+		import lombok.Setter;
+
+		@Setter
+		@Getter
+		public class SearchMovieDto extends RepresentationModel<SearchMovieDto>{
+			private String movieId;
+			private String movieTitle;
+			private String movieDate;
+			private int count;
+		}
+	// test 실행 초록색 나오면 ok
+	
+	// MovieSearchRestController
+		@Autowired MovieSearchService ms;
+		@GetMapping("getMovies")
+		public List<SearchMovieDto> getMovies() {
+			return ms.getMovies();
+		}
+
+	// MovieSearchService
+		import java.util.List;
+		import org.springframework.beans.factory.annotation.Autowired;
+		import org.springframework.hateoas.Link;
+		import org.springframework.stereotype.Service;
+		import com.care.root.dao.MovieSearchDao;
+		import com.care.root.dto.SearchMovieDto;
+		import com.care.root.movieURL.MovieURL;
+
+		@Service
+		public class MovieSearchService implements MovieURL{
+			@Autowired MovieSearchDao dao;
+			public List<SearchMovieDto> getMovies() {
+				List<SearchMovieDto> list = dao.getMovies();
+				for(SearchMovieDto dto : list) {
+					Link link = 
+							Link.of(movieViewUrl+"movieinfo/"+dto.getMovieId());
+					dto.add(link.withRel("movie"));
+				}
+				return list;
+			}
+		}
+	// MovieURL
+		public static final String movieViewUrl = 
+				"http://localhost:10001/search/";
+	// db에서 데이터 가지고 온 것 경로를 만들어 주고 dto 에 추가
+	// SearchService
+		public SearchMovieDto[] getMovieView() {
+			return movieSearch.getForObject(
+					movieViewUrl+"/getMovies" , SearchMovieDto[].class);
+		}	
+?? hateoas 검색 해보자 왜 쓰는지 장점 알아보고 싶다
+	// searchMovie.html
+	function getMovies(links) 에 추가
+		let movieInfoURL = links.substring(frontNum, rearNum)
+		$.ajax({
+			url : movieInfoURL,
+			type : "GET",
+			dataType : "json",
+			success : function(info) {
+				let html = info.result
+				$("#search").html(html)
+			},
+			error : function() {
+				alert('문제 발생')
+			}
+		});
+	// /로 넘어가는 문자는 @PathVariable 로 
+	
+	// MovieSearchRestController 
+		@GetMapping("movieinfo/{movieId}")
+		public Map<String, Object> movieInfo(@PathVariable String movieId) {
+			Map<String, Object> map = new HashMap();
+			map.put("result", "success : "+movieId);
+			return map;
+		}
+	// crossOrigin 문제
+	이 페이지의 주체는 10000번 링크를 누르는 순간 10001번으로 ajax로 요청
+	return 으로 값을 돌려주고 있음
+	10001번에 대한 내용을 화면에 뿌려주려고 하는 중에
+	하나의 페이지에 10000번과 10001번의 내용이 공존하므로
+	동작할 수 없어서 에러가 나옴
+	spring , boot , 다른 프레임워크에도 같은 문제임
+	크로스 오리진 처리를 해줘야함
+	// 해결법 : RestController에 @CrossOrigin 어노테이션 
+
+	// movieinfo method => RestController
+		public SearchMovieDto movieInfo(@PathVariable String movieId) {
+			return ms.getMovieInfo(movieId);
+		}
+	
+	// MovieSearchService
+		public SearchMovieDto getMovieInfo(String movieId) {
+			return dao.getMovieInfo(movieId);
+		}
+	// MovieSearchDao sql query
+		@Select("select * from movie_playing where movie_id = #{movieId}")
+		public SearchMovieDto getMovieInfo(String movieId);	
+		
+	// 이렇게 사용하게 되면 문제가 생김
+	Results 문은 바로 아래에 있는 query 만 적용이 됨
+	// results 에다가 id 부여
+		@Results(id="searchMovieDto", value={
+			@Result(property = "movieId", column="movie_id"),
+			@Result(property = "movieTitle", column="movie_title"),
+			@Result(property = "movieDate", column="movie_date"),
+			@Result(property = "count", column="count")
+		})	
+
+	// searchMovie.html function 주석처리하고 새로운 function
+		function getMovies(links) {
+			let frontNum = links.indexOf("<") + 1
+			let rearNum = links.indexOf(">")
+			console.log(links.substring(frontNum, rearNum))
+			let movieInfoURL = links.substring(frontNum, rearNum)
+			$.ajax({
+				url : movieInfoURL,
+				type : "GET",
+				dataType : "json",
+				success : function(info) {
+					let html = "<h2>영화 정보</h2>"
+					html += "<b>영화 제목 : </b>" + info.movieTitle + "<br>"
+					html += "<b>상영 날짜 : </b>" + info.movieDate + "<br>"
+					html += "<b>잔여 티켓 : </b>" + info.count + "<hr>"
+					html += "<a href='/bookview/"+info.movieId+
+		  "/"+info.movieTitle+"/"+info.movieDate+"'>예매하러가기</a>"
+					//let html =info.result
+					$("#search").html(html)
+				},
+				error : function() {
+					alert('문제 발생')
+				}
+			});
+		}
+
+	// 사용자가 해당하는 버튼을 누르면 bookview/info.movieId/info.movieTitle/info.movieDate
+	로 이동
+	// viewController 로 연결
+		@GetMapping("bookview/{movieId}/{movieTitle}/{movieDate}")
+		public String bookView(@PathVariable String movieId,
+				@PathVariable String movieTitle,
+				@PathVariable String movieDate, Model model) {
+			model.addAttribute("movieId",movieId);
+			model.addAttribute("movieTitle",movieTitle);
+			model.addAttribute("movieDate",movieDate);
+			return "bookView";
+		}
+
+	// bookView.html 잘 전달되는지 확인
+		<header th:include="default/header"></header>
+		<div class="wrap" align="center">
+			<h3>[[${movieId}]] : [[${movieTitle}]] / [[${movieDate}]]</h3>
+		</div>
+	
+	// bookView.html 
+		<body>
+			<header th:include="default/header"></header>
+			<div class="wrap" align="center">
+				<h3>[[${movieId}]] : [[${movieTitle}]] / [[${movieDate}]]</h3>
+				<hr width="300px">
+				<form th:action="@{/booking}" method="post">
+					<input type="hidden" th:value="${movieId}" th:name="movieId">
+					<input type="hidden" th:value="${movieTitle}" th:name="movieTitle">
+					<input type="hidden" th:value="${movieDate}" th:name="movieDate">
+					<table border="1">
+						<tr>
+							<th>이 름</th>
+							<td><input type="text" name="bookName"></td>
+						</tr>
+						<tr>
+							<th>전화번호</th>
+							<td><input type="text" name="bookPhone"></td>
+						</tr>
+						<tr>
+							<th>예매 수</th>
+							<td><input type="text" name="bookCount"></td>
+						</tr>
+						<tr>
+							<td colspan="2" align="right"><input type="submit"
+								value="예매확정"></td>
+						</tr>
+					</table>
+				</form>
+			</div>
+		</body>
+
+		// input 으로 표현할 때는 th:value 로 넣는다
+		th:name 이나 name: 이나 같다
+
+	// movieBookDto
+		import lombok.Getter;
+		import lombok.Setter;
+
+		@Setter
+		@Getter
+		public class MovieBookDto {
+		   private String bookDate;
+		   private String bookName;
+		   private String bookPhone;
+		   private String bookCount;
+		   private String movieId;
+		   private String movieTitle;
+		   private String movieDate;
+		}
+
+	// movieController
+		@PostMapping("booking")
+		public String booking(MovieBookDto dto, Model model) {
+			String message = "<script>alert('성공')</script>";
+			model.addAttribute("msg",message);
+			model.addAttribute("book",dto);
+			return "booking";
+		}
+
+	// booking.html
+		<body>
+			<header th:include="default/header"></header>
+			<p th:utext="${msg}"></p>
+			<div id="wrap" align="center">
+				<h3>예 매 내 역</h3>
+				<hr width="300px">
+				<table class="bookTable" th:object="${book}">
+					<tr>
+						<th>예약자 이름 :</th>
+						<td th:text="*{bookName}"></td>
+					</tr>
+					<tr>
+						<th>예약자 전화번호 :</th>
+						<td th:text="*{bookPhone}"></td>
+					</tr>
+					<tr>
+						<th>예약 매수 :</th>
+						<td th:text="*{bookCount}"></td>
+					</tr>
+					<tr>
+						<th>예약한 날짜 :</th>
+						<td th:text="*{bookDate}"></td>
+					</tr>
+					<tr>
+						<th>상영시간 :</th>
+						<td th:text="*{movieDate}"></td>
+					</tr>
+					<tr>
+						<th>상영영화 번호 :</th>
+						<td th:text="*{movieId}"></td>
+					</tr>
+					<tr>
+						<th>예약영화 제목 :</th>
+						<td th:text="*{movieTitle}"></td>
+					</tr>
+					<tr>
+						<th colspan="2"><hr> <a th:href="@{/searchMovie}">예약확인</a>
+						</th>
+					</tr>
+				</table>
+			</div>
+		</body>
+
+		<style type="text/css">
+		   .bookTable {width: 300px;}
+		   .bookTable th{ text-align: right;}
+		   .bookTable td{ padding-left: 20px;}
+		</style>
+
+	// 예약 매수 잔여량 확인 , 수량이 부족하거나 할 경우 수정 사용자 목록 저장은 내일
+	
+	// MovieController 에서 booking method 
+		String message = service.booking(dto);
+		
+	// service booking
+		public String booking(MovieBookDto dto) {
+			boolean bool = bookingChk(dto.getMovieId(),dto.getBookCount());
+			String message;
+			if(bool) {
+				message = "<script>alert('성공')</script>";
+			}else {
+				message =
+						"<script>alert('실패');location.href='"+movieUrl+"'</script>";
+			}
+			return message;
+		}
+		private boolean bookingChk(String movieId, String bookCount) {
+			int count = movieSearch.getForObject(
+					movieViewUrl+"getCount/"+movieId , Integer.class);
+			if(count < Integer.parseInt(bookCount)) {
+				return false;
+			}else {
+				return true;
+			}
+		}
+	// MovieSearchRestController
+		@GetMapping("getCount/{movieId}")
+		public Integer getCount(@PathVariable Integer movieId) {
+			return ms.getCount(movieId);
+		}
+
+	// MovieSearchService
+		public Integer getCount(Integer userId) {
+			return dao.getCount(userId);
+		}
+	// MovieSearchDao
+		@Select("select count from movie_playing where movie_id=#{movieId}")
+		public Integer getCount(Integer movieId);
+
+	// SearchService 예약 성공일 때 잔여량 차감
+		Map<String , Object> map = new HashMap<String, Object>();
+		map.put("movieId", movieId);map.put("count", bookCount);
+		// put 방식으로 삽입
+		movieSearch.put(movieViewUrl+"subCount", map);
+		
+	// MovieSearchRestController put 방식으로 받아서 
+		@PutMapping("subCount")
+		public void subCount(@RequestBody Map map) {
+		   ms.subCount(map);
+		}
+	// MovieSearchService
+		public void subCount(Map map) {
+			dao.subCount(map);
+		}
+	// MovieSearchDao
+		@Update("update movie_playing set count = count - #{count} where movie_id= #{movieId}")
+		public void subCount(Map map);
+
+
+
+
+
+
+
+
+

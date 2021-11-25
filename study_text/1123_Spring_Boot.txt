@@ -1,0 +1,192 @@
+Spring boot
+Thymeleaf라는 언어는 jsp 요구하지 않음 html 사용
+설치 마켓플레이스 -> 톱니바퀴 모양 spring
+서버 내장되있어서 포트 바꿔주면 여러개 실행가능
+
+New Spring Starter Project
+v 2.5.7 Spring Web
+thy -> Thymeleaf
+스프링 부트에서는 Thymeleaf를 지향함 
+부트에서는 xml 을 사용 권장 안함 어노테이션 지향
+
+// jsp 사용하기 위해
+	// dependency 추가
+		<dependency>
+			<groupId>org.apache.tomcat.embed</groupId>
+			<artifactId>tomcat-embed-jasper</artifactId>
+		</dependency>
+	// Thymeleaf 주석처리
+	
+	// Folder 생성
+		webapp -> WEB-INF -> jsp -> test.jsp 생성
+	
+	application.properties
+	// 경로 설정
+		spring.mvc.view.prefix = /WEB-INF/jsp/
+		spring.mvc.view.suffix = .jsp
+	// 포트 설정
+		server.port = 8888
+	// 구동되는지 확인
+		localhost:8888/test
+	// jsp 파일 새로고침 수정되게 하는 법
+		server.servlet.jsp.init-parameters.development = true
+		// 쓰지 않으면 서버를 계속 껏다 켜야 하는 불편함이 있음
+.yaml 파일이나 얌 파일은 계층적인 구조를 가지고 있음
+	// 생성
+		file -> application.yaml
+	// 작성
+	server:
+		servlet:
+			jsp:
+				init-parameters:
+					development: true
+
+// Thymeleaf 
+	// templates 에 index.html 파일 생성
+	// html 은 jstl , el 문법 못 씀
+	조건식을 쓰기 위해 Thymeleaf 사용
+
+	// Thymeleaf html 새로고침 설정 application.yaml
+		spring:
+		  thymeleaf:
+			cache: false
+	
+	// session , model 사용 Controller
+		@Autowired HttpSession session;
+		session.setAttribute("user", "session value");
+		model.addAttribute("user","model value");
+
+	// html
+	<html xmlns:th="http://www.thymeleaf.org">
+	<span th:text="${session.user}"></span><br>
+	<span th:text="${user}"></span><br>
+
+// dto 내보내기
+	
+	// Controller
+		@RequestMapping("object")
+		public String object(Model model) {
+			TestDTO sdto = new TestDTO();
+			sdto.setName("s 홍길동"); sdto.setAddr("s 산골짜기");
+			session.setAttribute("user", sdto);
+			TestDTO mdto = new TestDTO();
+			mdto.setName("m 홍길동"); mdto.setAddr("m 산골짜기");
+			model.addAttribute("user",mdto);
+			return "object";
+		}
+	// object.html
+		<h3>session</h3>
+		<div th:text="${session.user.name}"></div>
+		<div th:text="${session.user.addr}"></div>	
+		
+		// session.user 를 생략하겠다, 하위에서 작성하겠다
+			<div th:object="${session.user}">
+				<div th:text="*{name}"></div>
+				<div th:text="*{addr}"></div>		
+			</div>
+		</div>
+		
+		<h3>model</h3>
+		<div th:text="${user.name}"></div>
+		<div th:text="${user.addr}"></div>
+		<div th:object="${user}">
+			<div th:text="*{name}"></div>
+			<div th:text="*{addr}"></div>		
+		</div>	
+	
+// # 은 외부파일을 가지고 올 때 사용
+	// messages.properties file 생성
+	// url.name = http://www.naver.com 작성
+	
+		<a th:href="#{url.naver}" th:text="#{url.naver}"></a><br>
+		
+		// 같은 방식
+		<a th:href="@{home}" th:text="home"></a><br>
+		<a href="home" >home</a>
+		
+		// 외부 파일을 주소로 넘겨주는 방식
+		<a th:href="@{'/home/' + #{url.naver} }" >url.naver</a><br>
+		
+		// model 값을 주소로 넘겨주는 방식
+		<a th:href="@{'/home/' + ${user.name}}">user.name</a><br>
+		
+		// requestparam 으로 받기 위해 ? 로 넘어가는 방식
+		<a th:href="@{home(name=${user.name}) }">name=user.name</a><br>
+		<a th:href="@{home(name=${user.name},addr=${user.addr})}">
+		   name=user.name, addr=user.addr
+		</a><br>
+		
+	// Controller 문 작성
+		String msg = "<script>alert('안녕');</script>";
+		msg += "<h1>안녕하세요</h1>";
+		model.addAttribute("msg",msg);
+	// html 문 작성
+		[[${msg}]] == <div th:text="${msg}"></div>
+		// html 문으로 표현하려면
+		<div th:utext="${msg}"></div>
+
+	// ModelAndView Controller
+		@RequestMapping("operator/{num}")
+		public ModelAndView operator(@PathVariable int num, ModelAndView mav) {
+		  
+		  // 주소로 넘어가는 값 return 값
+			mav.setViewName("operator");
+			
+		   List<String> arr = new ArrayList<String>();
+		   arr.add("홍길동"); arr.add("김개똥"); arr.add("고길동");
+		   mav.addObject("arr",arr); mav.addObject("num",num);
+		   mav.addObject("name","김말이");
+		   return mav;
+		}	
+		// 스프링에서는 ModelAndView mav = new ModelAndView(); 로 받아와야함!!!
+		
+	// html 받는 방법 operator.html 삼항 연산자, switch
+		<!DOCTYPE html>
+		<html xmlns:th="http://www.thymeleaf.org">
+		<head>
+		<meta charset="UTF-8">
+		<title>Insert title here</title>
+		</head>
+		<body>
+			<h3>삼항 연산자</h3>
+			<span th:text="${num} > 10 ? 참:거짓"></span>=>[[${num}]]
+			<hr>
+			<h3>switch</h3>
+			<div th:switch="${num}">
+				<span th:case="1">1입니다</span> <span th:case="2" th:text="2입니다"></span>
+				<span th:case="*">해당값이 없습니다</span>
+			</div>
+		</body>
+		</html>
+	
+	// if문 , forEach 문
+		<h3>if & each 문</h3>
+		<table border="1">
+			<tr>
+				<td th:if="${num} > 0" th:text="환영"></td>
+				<td th:unless="${num} > 0">미환영</td>
+			</tr>
+			<tr th:each="obj:${arr}">
+				<td th:text="${obj}"></td>
+			</tr>
+		</table>
+		arr.size() : [[${arr.size()}]]
+		<br> arr[0] : [[${arr[0]}]]
+		<br> arr[1] : [[${arr[1]}]]
+		<br> arr[2] : [[${arr[2]}]]
+		<br>
+	
+// 보여지는 서버 => 예매 , 검색 연결
+	
+	// include 하는 방법
+		// default => header.html
+	
+	<script type="text/javascript" th:inline="javascript">
+		alert( [[${arr[0]}]])
+	</script>
+	<header th:include = "/default/header"></header>
+	<h3>삼항 연산자</h3>
+
+
+
+

@@ -1,0 +1,351 @@
+게시판 , 회원가입 , view 서버를 3개 만들고 연결할것
+장점 : 특정 메소드 패치가 있을 시 서버 전체가 멈추지 않고 부분적으로 멈춰서 사용자들이 안정성을 느낄 수 있다.
+
+Project Dependencis 
+spring boot devtool => 서버단에서 수정이 있어도 재시작 안해도 됨
+Lombok => DTO를 알아서 만들어줌 설치해서 연결해야함
+Spring HATEOAS => <a href = 주소> 
+회사가 이전을 한다던가 주소를 변경할 때 기존에 썼던 절대값은 일일히 수정을 해야 함
+이 주소를 서버단에서 관리를 하게 해줌
+model에 주소를 적으면 모든 곳에 뿌려줌 ( boot 쪽에만 있음 )
+
+// movie-view project
+	// style.css
+		@charset "UTF-8";
+		.wrap {
+			margin: 0 auto;
+			width: 1000px;
+		}
+		.title {
+			color: burlywood;
+			font-size: 60px;
+			font-family: Gabriola;
+			text-align: center;
+		}
+		.nav a {
+			text-decoration: none;
+			color: #8b4513;
+			transition: all 0.25s;
+		}
+		.nav a:hover {
+			color: gold;
+			padding-bottom: 3px;
+			border-bottom: 3px solid black;
+		}
+		.nav ul {
+			text-align: right;
+		}
+		.nav ul li {
+			display: inline;
+			margin: 0 20px;
+		}
+		.search {
+			width: 500px;
+			margin: 0 auto;
+			text-align: center;
+		}
+		.search table {
+			width: 100%;
+			border-top: 1px solid #444444;
+			border-collapse: collapse;
+		}
+		.search table td {
+			padding: 10px;
+		}
+		.search table th {
+			background-color: #EAEAEA;
+			padding: 10px;
+		}	
+	// moviecontroller
+		import org.springframework.stereotype.Controller;
+		import org.springframework.web.bind.annotation.GetMapping;
+
+		@Controller
+		public class MovieController {
+			@GetMapping("/home")
+			public String index() {
+				return "index";
+			}
+		}	
+
+	// Header.html
+		<link rel="stylesheet" type="text/css" href="/style.css">
+		
+		<div class="wrap">
+			<h1 class="title">CARE LAB</h1>
+			<hr>
+			<nav class="nav">
+				<!-- nav -->
+				<ul id="nav_url">
+					<li><a href="">test1</a></li>
+					<li><a href="">test2</a></li>
+				</ul>
+			</nav>
+			<hr>
+		</div>	
+	// index.html
+		<!DOCTYPE html>
+		<html xmlns:th="http://www.thymeleaf.org">
+		<head>
+		<meta charset="UTF-8">
+		<title>Insert title here</title>
+		<link rel="stylesheet" type="text/css" href="/style.css">
+		</head>
+		<body>
+			<header th:include="default/header"></header>
+			<div class="wrap">
+				기본 페이지
+			</div>
+		</body>
+		</html>
+	// Lombok 1.18.22
+		https://projectlombok.org/download Download 
+		Spring에서도 사용 가능
+		// eclipse 랑 연동
+		1. cd C:\SpringBoot
+		2. dir 로 파일 확인
+		3. java -jar lombok.jar
+		4. 파일 열림
+		5. 현재 사용하고 있는 eclipse Specify location 으로 search
+		6. install/update
+		7. 잘 안되면 eclipse.ini 파일 
+		-javaagent:lombok.jar
+		-Xbootclasspath/a:lombok.ja
+
+	// UrlDto setter, getter
+		import lombok.Getter;
+		import lombok.Setter;
+
+		@Setter
+		@Getter
+		public class UrlDto {
+			private String title;
+			private String url;
+			public UrlDto(String title, String url) {
+				this.title=title; this.url=url;
+			}
+		}
+	// UrlController
+		import java.util.ArrayList;
+
+		import org.springframework.beans.factory.annotation.Autowired;
+		import org.springframework.web.bind.annotation.GetMapping;
+		import org.springframework.web.bind.annotation.RestController;
+
+		import com.care.root.dto.UrlDto;
+		import com.care.root.service.UrlService;
+
+		// url 을 만들어서 뿌려주는 기능
+		@RestController
+		public class UrlController {
+			@Autowired UrlService us;
+			@GetMapping("geturl")
+			public ArrayList<UrlDto> getUrl(){
+				return us.getUrl();
+			}
+		}
+	// UrlService
+		import java.util.ArrayList;
+		import org.springframework.hateoas.Link;
+		import org.springframework.stereotype.Service;
+		import com.care.root.dto.UrlDto;
+
+		@Service
+		public class UrlService {
+			public ArrayList<UrlDto> getUrl(){
+				ArrayList<UrlDto> urlList = new ArrayList<UrlDto>();
+				String[] url = {"/home","/searchMovie"};
+				String[] name = {"홈","영화검색"};
+				String defaultURL = "http://localhost:10000";
+				for(int i=0;i<url.length;i++) {
+					UrlDto dto = new UrlDto(name[i], url[i]);
+					Link link = Link.of(defaultURL + url[i]);
+					// 상속을 받아야 주소를 저장
+					dto.add(link.withRel(dto.getUrl()));
+					urlList.add(dto);
+				}
+				return urlList;
+			}
+		}
+	// UrlDto
+		// dto 에 주소를 저장하게끔 상속받아서 만들어줌
+		public class UrlDto extends RepresentationModel<UrlDto>
+
+	// header.html onload="getUrl()"
+		<script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+		<body onload="getUrl()">	
+		<script type="text/javascript">
+			// Url 을 얻어오는 function
+			function getUrl(){
+				$.ajax({
+					url : "/geturl",
+					type : "get",
+					dataType : "json",
+					success : function(urlList){
+						console.log(urlList;
+						showUrl(urlList);
+					}, error : function(){alert('문제발생')}
+				})
+			}
+			// 얻어온 Url 을 nav 에 집어넣는 function
+			function showUrl(urlList){
+				// item 이 urlList에 들어오는 큰 덩어리 한개씩
+				// index는 array 안에 있는 번호(0,1)
+				$.each(urlList, function(index, item){
+					$("#nav_url").append("<li id="+ index +"></li>")
+					
+					a = document.createElement("a");
+					a.href = item.links[0].href;
+					a.innerHTML = item.title;
+					
+					$("#"+index).append(a);
+				})
+			}			
+		</script>
+
+	// SearchMovieDto 셋팅
+	
+	// MovieController 
+		@Autowired SearchService service;
+		@GetMapping("/searchMovie")
+		public String searchMovie(Model model) {
+			model.addAttribute("movie",service.getMovieView());
+			return "searchMovie";
+		}
+	// SearchService 작성
+		@Service
+		public class SearchService {
+			public ArrayList<SearchMovieDto> getMovieView() {
+		   ArrayList<SearchMovieDto> list = new ArrayList<SearchMovieDto>();
+		   // 영화를 누르면 상세보기로 이동을 해야해서 만듦
+		   String movieURL = "http://localhost:10000/search/movieinfo/";
+		   for(int i=1 ; i < 6 ; i++) {
+			   SearchMovieDto dto = new SearchMovieDto();
+			   dto.setMovieId(i+"");
+			   dto.setMovieTitle("화성을 지켜라"+i);
+			   dto.setMovieDate("2200-05-1"+i);
+			   Link link = Link.of(movieURL+i);
+			   dto.add(link.withRel(dto.getMovieTitle()));//경로이름
+			   list.add(dto);
+		   }
+		   return list;
+			}
+		}
+	
+	// DTO extends
+		public class SearchMovieDto extends RepresentationModel<SearchMovieDto>
+
+	// serarchMovie.html
+		// script
+			<script type="text/javascript"> 
+			function getMovies(links){ 
+				// < > 사이에 있는 문자열을 꺼내쓰는 code
+				let frontNum = links.indexOf("<")+1
+				let rearNum = links.indexOf(">")
+				console.log(links.substring(frontNum,rearNum))
+			}
+			</script>
+		//body
+			<header th:include="default/header"></header>
+			<div class="search" id="search">
+				<h3>상영중인 영화</h3>
+				<table border="1" >
+			   <tr>
+				   <th>번호</th><th>영화 제목</th> <th>상영 날짜</th>
+			   </tr>
+			   <tr th:each="movie : ${movie}" th:object="${movie}">
+				   <td><label th:text="*{movieId}"></label></td>
+				   <td>
+					 <a style="cursor:pointer"  th:text="*{movieTitle}" 
+					  th:attr="onclick=|getMovies('*{links}')|"></a>
+				   </td>
+				   <td><label th:text="*{movieDate}"></label></td>
+			   </tr>
+				</table>
+			</div>
+			// th:each => forEach문
+			// th:object => 하위에 있는걸 쓰기위해 사용
+			// th:attr="onclick=|getMovies('*{links}')|">
+			onclick 으로 function 쓸 때는 이렇게 쓴다.
+			
+// movie-search project 내부로 동작할 것임!
+	// Dependencies
+		- Spring boot DevTools
+		- Lombok
+		- MyBatis Framework
+		- Oracle Driver
+		- Spring Reactive Web 다른 서버로 데이터를 전송할 때 씀
+		- Spring HATEOAS
+
+	// application.yaml
+		spring:
+		  datasource:
+			driver-class-name: oracle.jdbc.OracleDriver
+			url: jdbc:oracle:thin:@localhost:1521
+			username: han
+			password: rlfdyd0603		
+	// application.properties
+		server.port = 10001
+	
+	// db table
+		create table movie_playing(
+			movie_id varchar2(20) primary key,
+			movie_title varchar2(50),
+			movie_date varchar2(50),
+			count number   
+		);
+		insert into movie_playing values('1','화성을 지켜라','2200-05-14',100);
+		insert into movie_playing values('2','지구를 지켜라','2200-05-14',100); 
+		insert into movie_playing values('3','우주를 지켜라','2200-04-02',100); 
+		commit;
+	// 결과값을 돌려주는 역할이므로 일반 Controller는 쓰지 않고 RestController 을 사용한다.
+	
+	// MovieSearchRestController
+		import org.springframework.web.bind.annotation.GetMapping;
+		import org.springframework.web.bind.annotation.RestController;
+
+		@RestController
+		public class MovieSearchRestController {
+			@GetMapping("getMovies")
+			public String getMovies() {
+				return "성공??";
+			}
+		}
+	
+	// movie-view project -> movieURL => 경로관리
+		public interface movieURL {
+			public static final String movieViewUrl = 
+					"http://localhost:100001/search/";
+		}	
+	// searchService
+		public class SearchService implements movieURL
+		
+		RestTemplate movieSearch = new RestTemplate();
+		// 앞에는 경로 뒤에는 반환타입
+			String test = movieSearch.getForObject(
+			movieViewUrl+"/getMovies", String.class);
+		System.out.println("movieSearch 연결 결과 : "+test);
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+	<header th:include="default/header"></header>
+	<p th:utext="${msg}"></p>
+	<div id="wrap" align="center">
+		<h3>예 매 내 역</h3>
+		<hr width="300px">
+		<table class="bookTable" th:object="${book}">
+			<tr>
+				<th>예약자 이름 :</th>
+				<td th:text="*{bookName}"></td>
+			</tr>
+			<tr>
+				<th>예약자 전화번호 :</th>
+				<td th:text="*{bookPhone}"></td>
+			</tr>
+			<tr>
+				<th>예약 매수 :</th>
+				<td th:text="*{bookCount}"></td>
+			</tr>
+			<tr>
+				<th>예약한 날짜 :</th>
+				<td th:text="*{bookDate}"></td>
+			</tr>
+			<tr>
+				<th>상영시간 :</th>
+				<td th:text="*{movieDate}"></td>
+			</tr>
+			<tr>
+				<th>상영영화 번호 :</th>
+				<td th:text="*{movieId}"></td>
+			</tr>
+			<tr>
+				<th>예약영화 제목 :</th>
+				<td th:text="*{movieTitle}"></td>
+			</tr>
+			<tr>
+				<th colspan="2"><hr> <a th:href="@{/searchMovie}">예약확인</a>
+				</th>
+			</tr>
+		</table>
+	</div>
+</body>
+</html>
